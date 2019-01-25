@@ -4,8 +4,10 @@
 	"publisher": "SmartMonkey",
 	"description": "Geo Tools VSCode extension allows you to easily interact with geographical data.",
 	"repository": {
-		"url": "git@github.com:smartmonkeyio/geotools.git"
+		"type": "git",
+		"url": "https://github.com/smartmonkeyio/geotools.git"
 	},
+	"icon": "images/icon.png",
 	"version": "1.0.0",
 	"engines": {
 		"vscode": "^1.30.0"
