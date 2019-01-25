@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -45,7 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 			} // Webview options. More on these later.
 		);
 
-		panel.webview.html = getPolylineWebView(text);
+		panel.webview.html = getPolylineWebView(context, text);
 	});
 
 	context.subscriptions.push(showPolyline);
@@ -73,7 +74,7 @@ export function activate(context: vscode.ExtensionContext) {
 			} // Webview options. More on these later.
 		);
 
-		panel.webview.html = getCoordinateWebview(text);
+		panel.webview.html = getCoordinateWebview(context, text);
 	});
 
 	context.subscriptions.push(showCoordinate);
@@ -82,7 +83,17 @@ export function activate(context: vscode.ExtensionContext) {
 // this method is called when your extension is deactivated
 export function deactivate() { }
 
-function getPolylineWebView(polyline: string) {
+function getLogoPath(context: vscode.ExtensionContext) {
+	// Get path to resource on disk
+	const onDiskPath = vscode.Uri.file(
+		path.join(context.extensionPath, 'images', 'powered_by_smartmonkey.png')
+	);
+
+	// And get the special URI to use with the webview
+	return onDiskPath.with({ scheme: 'vscode-resource' });
+}
+
+function getPolylineWebView(context: vscode.ExtensionContext, polyline: string) {
 	return `
 	<!DOCTYPE html>
 <html>
@@ -105,11 +116,11 @@ function getPolylineWebView(polyline: string) {
 <body>
 	<div id="mapid" style="width: 100vw; height: 100vh; top:0; left: 0" class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom"
 	 tabindex="0"></div>
+	<img style="position:absolute;bottom:40px;right:0;z-index:10000;width:250px" src="${getLogoPath(context)}"></img>
 
 	<script>
 		var data = '${polyline}';
 		var latlngs = polyline.decode(data);
-		console.log(latlngs);
 
 		var map = L.map('mapid').setView([51.505, -0.09], 13);
 		L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
@@ -126,7 +137,7 @@ function getPolylineWebView(polyline: string) {
 	`;
 }
 
-function getCoordinateWebview(coordinate: string) {
+function getCoordinateWebview(context: vscode.ExtensionContext, coordinate: string) {
 	return `
 	<!DOCTYPE html>
 <html>
@@ -149,6 +160,7 @@ function getCoordinateWebview(coordinate: string) {
 <body>
 	<div id="mapid" style="width: 100vw; height: 100vh; top:0; left: 0" class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom"
 	 tabindex="0"></div>
+	<img style="position:absolute;bottom:40px;right:0;z-index:10000;width:250px" src="${getLogoPath(context)}"></img>
 
 	<script>
 		var map = L.map('mapid').setView([${coordinate}], 13);
