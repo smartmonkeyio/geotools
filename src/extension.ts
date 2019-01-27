@@ -59,7 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
 			return; // No open text editor
 		}
 		const text = editor.document.getText(editor.selection);
-		if (text.length === 0) {
+		const coords = extractCoordinates(text);
+		if (text.length === 0 || coords.length < 2) {
 			vscode.window.showInformationMessage('You must select a coordinate!');
 			return; // No open text editor
 		}
@@ -74,7 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
 			} // Webview options. More on these later.
 		);
 
-		panel.webview.html = getCoordinateWebview(context, text);
+		panel.webview.html = getCoordinateWebview(context, [coords[0], coords[1]].join(','));
 	});
 
 	context.subscriptions.push(showCoordinate);
@@ -91,6 +92,11 @@ function getLogoPath(context: vscode.ExtensionContext) {
 
 	// And get the special URI to use with the webview
 	return onDiskPath.with({ scheme: 'vscode-resource' });
+}
+
+function extractCoordinates(text: string) {
+	const regex = /[-]{0,1}[\d]*[\.]{0,1}[\d]+/g;
+	return (text.match(regex) || []).map(parseFloat);
 }
 
 function getPolylineWebView(context: vscode.ExtensionContext, polyline: string) {
