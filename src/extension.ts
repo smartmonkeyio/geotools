@@ -3,6 +3,11 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
+interface Coordinate {
+	lat: number;
+	lng: number;
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -39,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// Create and show a new webview
 		const panel = vscode.window.createWebviewPanel(
 			'polyline', // Identifies the type of the webview. Used internally
-			'Polyline', // Title of the panel displayed to the user
+			'GeoTools - Polyline', // Title of the panel displayed to the user
 			vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
 			{
 				enableScripts: true // Allow JS execution inside the webview
@@ -51,6 +56,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(showPolyline);
 
+	let coordinatePanel: vscode.WebviewPanel;
+	let coordinates: Array<Coordinate> = [];
 	let showCoordinate = vscode.commands.registerCommand('extension.showCoordinate', () => {
 		// The code you place here will be executed every time your command is executed
 		let editor = vscode.window.activeTextEditor;
@@ -65,17 +72,24 @@ export function activate(context: vscode.ExtensionContext) {
 			return; // No open text editor
 		}
 
-		// Create and show a new webview
-		const panel = vscode.window.createWebviewPanel(
-			'coordinate', // Identifies the type of the webview. Used internally
-			'Coordinate', // Title of the panel displayed to the user
-			vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
-			{
-				enableScripts: true // Allow JS execution inside the webview
-			} // Webview options. More on these later.
-		);
-
-		panel.webview.html = getCoordinateWebview(context, [coords[0], coords[1]].join(','));
+		if (coordinatePanel === undefined) {
+			// Create and show a new webview
+			coordinatePanel = vscode.window.createWebviewPanel(
+				'coordinate', // Identifies the type of the webview. Used internally
+				'GeoTools - Coordinate', // Title of the panel displayed to the user
+				vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
+				{
+					enableScripts: true, // Allow JS execution inside the webview
+				} // Webview options. More on these later.
+			);
+			coordinatePanel.onDidDispose(() => coordinatePanel = undefined as any);
+			coordinatePanel.iconPath = vscode.Uri.file(
+				path.join(context.extensionPath, 'images', 'icon.png')
+			);
+			coordinates = [];
+		}
+		coordinates.push({ lat: coords[0], lng: coords[1] });
+		coordinatePanel.webview.html = getCoordinateWebview(context, coordinates);
 	});
 
 	context.subscriptions.push(showCoordinate);
@@ -119,7 +133,7 @@ function getPolylineWebView(context: vscode.ExtensionContext, polyline: string) 
 
 </head>
 
-<body>
+<body style="padding:0px">
 	<div id="mapid" style="width: 100vw; height: 100vh; top:0; left: 0" class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom"
 	 tabindex="0"></div>
 	<img style="position:absolute;bottom:40px;right:0;z-index:10000;width:250px" src="${getLogoPath(context)}"></img>
@@ -143,7 +157,7 @@ function getPolylineWebView(context: vscode.ExtensionContext, polyline: string) 
 	`;
 }
 
-function getCoordinateWebview(context: vscode.ExtensionContext, coordinate: string) {
+function getCoordinateWebview(context: vscode.ExtensionContext, coordinates: Array<Coordinate>) {
 	return `
 	<!DOCTYPE html>
 <html>
@@ -163,18 +177,21 @@ function getCoordinateWebview(context: vscode.ExtensionContext, coordinate: stri
 
 </head>
 
-<body>
+<body style="padding:0px">
 	<div id="mapid" style="width: 100vw; height: 100vh; top:0; left: 0" class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom"
 	 tabindex="0"></div>
 	<img style="position:absolute;bottom:40px;right:0;z-index:10000;width:250px" src="${getLogoPath(context)}"></img>
 
 	<script>
-		var map = L.map('mapid').setView([${coordinate}], 13);
+		var coordinates = ${JSON.stringify(coordinates)};
+		var map = L.map('mapid').setView([coordinates[0].lat,coordinates[0].lng], 13);
 		L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
 			attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
 		}).addTo(map);
 
-		L.marker([${coordinate}]).addTo(map);
+		coordinates.forEach(coordinate => {
+			L.marker([coordinate.lat, coordinate.lng]).addTo(map);
+		});
 	</script>
 </body>
 
