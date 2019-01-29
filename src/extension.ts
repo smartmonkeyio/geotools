@@ -134,7 +134,7 @@ function getPolylineWebView(context: vscode.ExtensionContext, polyline: string) 
 			attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
 		}).addTo(map);
 
-		var polyline = L.polyline(latlngs, { color: 'red', weight: 5 }).addTo(map);
+		var polyline = L.polyline(latlngs, { color: 'red', weight: 5, dashArray: '5, 10', fillColor: 'green' }).addTo(map);
 		// zoom the map to the polyline
 		map.fitBounds(polyline.getBounds());
 	</script>
