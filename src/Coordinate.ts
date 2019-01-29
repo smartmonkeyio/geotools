@@ -1,3 +1,5 @@
+import { decode } from '@mapbox/polyline';
+
 export interface Coordinate {
 	lat: number;
 	lng: number;
@@ -43,4 +45,15 @@ function validateCoordinate(coordinate: Coordinate) {
 	if (coordinate.lng < -180 || coordinate.lng > 180) {
 		throw new Error("Longitude out of range");
 	}
+}
+
+/**
+ * Checks that all positions of polyline are valid
+ * @param polyline Polyline to validate
+ */
+export function validatePoyline(polyline: string) {
+	decode(polyline).map((c: [number, number]) => ({
+		lat: c[0],
+		lng: c[1]
+	})).forEach(validateCoordinate);
 }

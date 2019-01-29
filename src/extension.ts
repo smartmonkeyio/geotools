@@ -2,52 +2,39 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { extractCoordinates, Coordinate } from './Coordinate';
+import { extractCoordinates, Coordinate, validatePoyline } from './Coordinate';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "geotools" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World!');
-	});
-
-	context.subscriptions.push(disposable);
-
 	let showPolyline = vscode.commands.registerCommand('extension.showPolyline', () => {
-		// The code you place here will be executed every time your command is executed
-		let editor = vscode.window.activeTextEditor;
-		if (editor === undefined) {
-			vscode.window.showInformationMessage('You must select a polyline!');
-			return; // No open text editor
+		try {
+			// The code you place here will be executed every time your command is executed
+			let editor = vscode.window.activeTextEditor;
+			if (editor === undefined) {
+				throw new Error('You must select a polyline!');
+			}
+			const text = editor.document.getText(editor.selection);
+			if (text.length === 0) {
+				throw new Error('You must select a polyline!');
+			}
+			validatePoyline(text);
+			// Create and show a new webview
+			const panel = vscode.window.createWebviewPanel(
+				'polyline', // Identifies the type of the webview. Used internally
+				'GeoTools - Polyline', // Title of the panel displayed to the user
+				vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
+				{
+					enableScripts: true // Allow JS execution inside the webview
+				}
+			);
+			panel.iconPath = getFaviconPath(context);
+			panel.webview.html = getPolylineWebView(context, text);
 		}
-		const text = editor.document.getText(editor.selection);
-		if (text.length === 0) {
-			vscode.window.showInformationMessage('You must select a polyline!');
-			return; // No open text editor
+		catch (error) {
+			vscode.window.showInformationMessage(error.message);
 		}
-
-		// Create and show a new webview
-		const panel = vscode.window.createWebviewPanel(
-			'polyline', // Identifies the type of the webview. Used internally
-			'GeoTools - Polyline', // Title of the panel displayed to the user
-			vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
-			{
-				enableScripts: true // Allow JS execution inside the webview
-			} // Webview options. More on these later.
-		);
-
-		panel.webview.html = getPolylineWebView(context, text);
 	});
 
 	context.subscriptions.push(showPolyline);
@@ -75,12 +62,10 @@ export function activate(context: vscode.ExtensionContext) {
 					vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
 					{
 						enableScripts: true, // Allow JS execution inside the webview
-					} // Webview options. More on these later.
+					}
 				);
 				coordinatePanel.onDidDispose(() => coordinatePanel = undefined as any);
-				coordinatePanel.iconPath = vscode.Uri.file(
-					path.join(context.extensionPath, 'images', 'favicon.png')
-				);
+				coordinatePanel.iconPath = getFaviconPath(context);
 				coordinates = [];
 			}
 			coords.forEach(c => coordinates.push(c));
@@ -102,9 +87,14 @@ function getLogoPath(context: vscode.ExtensionContext) {
 	const onDiskPath = vscode.Uri.file(
 		path.join(context.extensionPath, 'images', 'powered_by_smartmonkey.png')
 	);
-
 	// And get the special URI to use with the webview
 	return onDiskPath.with({ scheme: 'vscode-resource' });
+}
+
+function getFaviconPath(context: vscode.ExtensionContext) {
+	return vscode.Uri.file(
+		path.join(context.extensionPath, 'images', 'favicon.png')
+	);
 }
 
 
