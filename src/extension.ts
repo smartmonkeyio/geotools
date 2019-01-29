@@ -2,11 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import * as path from 'path';
-
-interface Coordinate {
-	lat: number;
-	lng: number;
-}
+import { extractCoordinates, Coordinate } from './Coordinate';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -59,37 +55,40 @@ export function activate(context: vscode.ExtensionContext) {
 	let coordinatePanel: vscode.WebviewPanel;
 	let coordinates: Array<Coordinate> = [];
 	let showCoordinate = vscode.commands.registerCommand('extension.showCoordinate', () => {
-		// The code you place here will be executed every time your command is executed
-		let editor = vscode.window.activeTextEditor;
-		if (editor === undefined) {
-			vscode.window.showInformationMessage('You must select a coordinate!');
-			return; // No open text editor
-		}
-		const text = editor.document.getText(editor.selection);
-		const coords = extractCoordinates(text);
-		if (text.length === 0 || coords.length < 2) {
-			vscode.window.showInformationMessage('You must select a coordinate!');
-			return; // No open text editor
-		}
+		try {
+			// The code you place here will be executed every time your command is executed
+			let editor = vscode.window.activeTextEditor;
+			if (editor === undefined) {
+				throw new Error('You must select a coordinate!');
+			}
+			const text = editor.document.getText(editor.selection);
+			const coords = extractCoordinates(text);
+			if (text.length === 0 || coords.length < 1) {
+				throw new Error('You must select a coordinate!');
+			}
 
-		if (coordinatePanel === undefined) {
-			// Create and show a new webview
-			coordinatePanel = vscode.window.createWebviewPanel(
-				'coordinate', // Identifies the type of the webview. Used internally
-				'GeoTools - Coordinate', // Title of the panel displayed to the user
-				vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
-				{
-					enableScripts: true, // Allow JS execution inside the webview
-				} // Webview options. More on these later.
-			);
-			coordinatePanel.onDidDispose(() => coordinatePanel = undefined as any);
-			coordinatePanel.iconPath = vscode.Uri.file(
-				path.join(context.extensionPath, 'images', 'icon.png')
-			);
-			coordinates = [];
+			if (coordinatePanel === undefined) {
+				// Create and show a new webview
+				coordinatePanel = vscode.window.createWebviewPanel(
+					'coordinate', // Identifies the type of the webview. Used internally
+					'GeoTools - Coordinate', // Title of the panel displayed to the user
+					vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
+					{
+						enableScripts: true, // Allow JS execution inside the webview
+					} // Webview options. More on these later.
+				);
+				coordinatePanel.onDidDispose(() => coordinatePanel = undefined as any);
+				coordinatePanel.iconPath = vscode.Uri.file(
+					path.join(context.extensionPath, 'images', 'favicon.png')
+				);
+				coordinates = [];
+			}
+			coords.forEach(c => coordinates.push(c));
+			coordinatePanel.webview.html = getCoordinateWebview(context, coordinates);
 		}
-		coordinates.push({ lat: coords[0], lng: coords[1] });
-		coordinatePanel.webview.html = getCoordinateWebview(context, coordinates);
+		catch (error) {
+			vscode.window.showInformationMessage(error.message);
+		}
 	});
 
 	context.subscriptions.push(showCoordinate);
@@ -108,10 +107,6 @@ function getLogoPath(context: vscode.ExtensionContext) {
 	return onDiskPath.with({ scheme: 'vscode-resource' });
 }
 
-function extractCoordinates(text: string) {
-	const regex = /[-]{0,1}[\d]*[\.]{0,1}[\d]+/g;
-	return (text.match(regex) || []).map(parseFloat);
-}
 
 function getPolylineWebView(context: vscode.ExtensionContext, polyline: string) {
 	return `
@@ -136,7 +131,9 @@ function getPolylineWebView(context: vscode.ExtensionContext, polyline: string) 
 <body style="padding:0px">
 	<div id="mapid" style="width: 100vw; height: 100vh; top:0; left: 0" class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom"
 	 tabindex="0"></div>
-	<img style="position:absolute;bottom:40px;right:0;z-index:10000;width:250px" src="${getLogoPath(context)}"></img>
+	<a href="https://smartmonkey.io" target="_blank" style="position:absolute;bottom:40px;right:0;z-index:10000;width:250px;border:0px" >
+		<img src="${getLogoPath(context)}"></img>
+	</a>
 
 	<script>
 		var data = '${polyline}';
@@ -180,7 +177,9 @@ function getCoordinateWebview(context: vscode.ExtensionContext, coordinates: Arr
 <body style="padding:0px">
 	<div id="mapid" style="width: 100vw; height: 100vh; top:0; left: 0" class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom"
 	 tabindex="0"></div>
-	<img style="position:absolute;bottom:40px;right:0;z-index:10000;width:250px" src="${getLogoPath(context)}"></img>
+	<a href="https://smartmonkey.io" target="_blank" style="position:absolute;bottom:40px;right:0;z-index:10000;width:250px;border:0px" >
+		<img src="${getLogoPath(context)}"></img>
+	</a>
 
 	<script>
 		var coordinates = ${JSON.stringify(coordinates)};
@@ -189,8 +188,8 @@ function getCoordinateWebview(context: vscode.ExtensionContext, coordinates: Arr
 			attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
 		}).addTo(map);
 
-		coordinates.forEach(coordinate => {
-			L.marker([coordinate.lat, coordinate.lng]).addTo(map);
+		coordinates.forEach((coordinate, index) => {
+			L.marker([coordinate.lat, coordinate.lng]).bindPopup("<b>Marker " + (index+1) + "</b>:<br/>" + coordinate.lat + ', ' + coordinate.lng).addTo(map);
 		});
 	</script>
 </body>
