@@ -14,14 +14,19 @@ This extension provides with a series of convenient tools to deal with geographi
 
 ![polyline demo screenshot](images/docs/polyline_example.gif)
 
+* **Insert geocoded address**: Select the option Insert `Insert geocoded coordinate` to insert coordinate of an address at the cursor's position.
+
 ## Requirements
 
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
 ## Release Notes
 
+### 1.3.0
+- Add `Insert geocoded address` command.
+
 ### 1.2.1
-- Update documentation graphics
+- Update documentation graphics.
 
 ### 1.1.0
 - Parse coordinates among text
@@ -34,5 +39,10 @@ If you have any requirements or dependencies, add a section describing those and
 ### 1.0.0
 - Initial release of Geo Tools.
 
-# Credits
+## Usage policy
+By using this Visual Studio Code extension you agree to the following terms:
+- [License](LICENSE)
+- [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/)
+
+## Credits
 Brought to you by the [SmartMonkey.io](https://smartmonkey.io) team.
