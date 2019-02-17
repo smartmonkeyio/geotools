@@ -60,10 +60,18 @@ export function validatePoyline(polyline: string) {
 }
 
 /**
+ * Storage for geocoding requests
+ */
+const geocodingMemory: { [id: string]: Coordinate } = {};
+
+/**
  * Geocodes the string using Nominatim
  * @param query String to be geocoded
  */
 export async function geocode(query: string): Promise<Coordinate> {
+    if (query in geocodingMemory) {
+        return geocodingMemory[query];
+    }
     const response = await request({
         uri: 'https://nominatim.openstreetmap.org/search',
         qs: {
@@ -79,5 +87,6 @@ export async function geocode(query: string): Promise<Coordinate> {
         throw new Error('No result found');
     }
     const { lat, lon } = response[0];
+    geocodingMemory[query] = { lat, lng: lon };
     return { lat, lng: lon };
 }

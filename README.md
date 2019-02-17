@@ -22,6 +22,9 @@ If you have any requirements or dependencies, add a section describing those and
 
 ## Release Notes
 
+### 1.3.1
+- Add caching to geocoding function in order to reduce requests to Nominatim.
+
 ### 1.3.0
 - Add `Insert geocoded address` command.
 
