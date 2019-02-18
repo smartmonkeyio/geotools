@@ -16,6 +16,8 @@ This extension provides with a series of convenient tools to deal with geographi
 
 * **Insert geocoded address**: Select the option Insert `Insert geocoded coordinate` to insert coordinate of an address at the cursor's position.
 
+![geocoding demo screenshot](images/docs/geocoding_example.gif)
+
 ## Requirements
 
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.
