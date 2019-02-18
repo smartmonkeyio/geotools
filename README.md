@@ -24,6 +24,9 @@ If you have any requirements or dependencies, add a section describing those and
 
 ## Release Notes
 
+### 1.3.2
+- Improve documentation (add geocoding GIF to README)
+
 ### 1.3.1
 - Add caching to geocoding function in order to reduce requests to Nominatim.
 
